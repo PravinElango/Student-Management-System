@@ -1,0 +1,15 @@
+<h1>CREATE ACCOUNT</h1>
+<form [formGroup]="signupForm" (ngSubmit)="onSignup()">
+    <label>Username<input type="text" formControlName="username"></label>
+    @if (signupForm.controls.username.invalid && signupForm.controls.username.touched){
+    <p>Username is required and must contain atleast 3 characters</p>
+    }
+
+    <label>Email<input type="email" formControlName="email"></label>
+    <label>Password<input type="password" formControlName="password"></label>
+    <p class="text-center">
+        Already having an account?
+        <a routerLink="/login">Sign In</a>
+    </p>
+    <input type="submit" value="Signup">
+</form>

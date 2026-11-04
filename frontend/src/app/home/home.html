@@ -1,0 +1,94 @@
+<div class="dashboard-container">
+
+    <header class="top-navbar d-flex justify-content-between align-items-center px-4">
+        <div class="brand">
+            <h4>Institute Student Management</h4>
+        </div>
+
+        <div class="admin-info d-flex align-items-center gap-3">
+            <i class="fa-solid fa-user-shield"></i>
+            <span>Administrator</span>
+
+            <button class="btn btn-outline-danger btn-sm" (click)="logout()">
+                <i class="fa-solid fa-right-from-bracket me-1"></i>
+                Logout
+            </button>
+        </div>
+    </header>
+
+    <div class="dashboard-body d-flex flex-grow-1">
+
+        <aside class="sidebar flex-shrink-0 p-3">
+            <nav>
+                <ul class="nav flex-column">
+
+                    <li class="nav-item">
+                        <a class="nav-link active" routerLink="/home">
+                            <i class="fa-solid fa-gauge-high me-2"></i>
+                            Dashboard
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link" routerLink="/students">
+                            <i class="fa-solid fa-user-graduate me-2"></i>
+                            Students
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link" routerLink="/courses">
+                            <i class="fa-solid fa-book-open me-2"></i>
+                            Courses
+                        </a>
+                    </li>
+
+                </ul>
+            </nav>
+        </aside>
+
+        <main class="main-content flex-grow-1">
+
+            <div class="dashboard-heading mb-4">
+                <h3>
+                    <i class="fa-solid fa-chart-line me-2"></i>
+                    Dashboard Overview
+                </h3>
+                <p class="text-muted">Welcome to the administration panel.</p>
+            </div>
+
+            @if (dataLoaded()) {
+                <div class="row g-4">
+
+                    <div class="col-md-6">
+                        <div class="card dashboard-card p-4">
+                            <div class="d-flex align-items-center gap-3">
+                                <i class="fa-solid fa-users stat-icon"></i>
+                                <div>
+                                    <h6>Total Students</h6>
+                                    <h3>{{totalStudents}}</h3>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="card dashboard-card p-4">
+                            <div class="d-flex align-items-center gap-3">
+                                <i class="fa-solid fa-book stat-icon"></i>
+                                <div>
+                                    <h6>Total Courses</h6>
+                                    <h3>{{totalCourses}}</h3>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            } @else {
+                <p>Loading dashboard...</p>
+            }
+
+        </main>
+    </div>
+</div>
