@@ -15,5 +15,5 @@ export const routes: Routes = [
     { path: 'courses/:courseId/edit', component: Courses, canActivate: [authGuard] },
     { path: 'courses/:courseId', component: Courses, canActivate: [authGuard] },
     { path: "courses", component: Courses, canActivate: [authGuard] },
-    { path: "home", component: Home, canActivate: [authGuard] }    
+    { path: "home", component: Home, canActivate: [authGuard] }
 ];

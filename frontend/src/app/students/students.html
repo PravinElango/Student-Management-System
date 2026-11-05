@@ -56,6 +56,12 @@
                     </h3>
                 </div>
                 <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-success" (click)="fileInput.click()">
+                        <i class="fa-solid fa-file-import me-2"></i>
+                        Import Excel
+                    </button>
+
+                    <input #fileInput type="file" accept=".xlsx,.xls" hidden (change)="importStudents($event)">
                     <button type="button" class="btn btn-success" (click)="exportStudentsToExcel()">
                         <i class="fa-solid fa-file-excel me-2"></i>
                         Export Excel
@@ -69,89 +75,234 @@
             </div>
 
             @if (showStudentDetails()) {
-            <div class="card mb-4">
+            <div class="modal fade show d-block" tabindex="-1">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
 
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">
-                        <i class="fa-solid fa-id-card me-2"></i>
-                        Student Details
-                    </h5>
+                        <div class="modal-header">
+                            <h5 class="modal-title">
+                                <i class="fa-solid fa-id-card me-2"></i>
+                                Student Details
+                            </h5>
 
-                    <button class="btn btn-sm btn-secondary" (click)="closeStudentDetails()">
-                        <i class="fa-solid fa-xmark me-1"></i>
-                        Close
-                    </button>
+                            <button type="button" class="btn-close" aria-label="Close" (click)="closeStudentDetails()">
+                            </button>
+                        </div>
+
+                        <div class="modal-body">
+
+                            @if (studentDetails()) {
+                            @if (profileImageUrl) {
+                            <img [src]="profileImageUrl" alt="Student Profile" class="student-profile-image">
+                            } @else {
+                            <div class="default-profile">
+                                <i class="fa-solid fa-user"></i>
+                            </div>
+                            }
+                            <p>
+                                <strong><i class="fa-solid fa-user me-2"></i>Name:</strong>
+                                {{ studentDetails()!.data.name }}
+                            </p>
+
+                            <p>
+                                <strong><i class="fa-solid fa-envelope me-2"></i>Email:</strong>
+                                {{ studentDetails()!.data.email }}
+                            </p>
+
+                            <p>
+                                <strong><i class="fa-solid fa-calendar me-2"></i>Age:</strong>
+                                {{ studentDetails()!.data.age }}
+                            </p>
+
+                            <p>
+                                <strong><i class="fa-solid fa-book-open me-2"></i>Course:</strong>
+                                {{ studentDetails()!.data.course.name }}
+                            </p>
+
+                            <p>
+                                <strong><i class="fa-solid fa-hashtag me-2"></i>Course Code:</strong>
+                                {{ studentDetails()!.data.course.code }}
+                            </p>
+                            } @else {
+                            <p>Loading student details...</p>
+                            }
+
+                        </div>
+
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-primary"
+                                (click)="downloadStudentPdf(studentDetails()?.data?._id ?? '')">
+                                <i class="fa-solid fa-file-pdf me-1"></i>
+                                Download PDF
+                            </button>
+                            <button type="button" class="btn btn-secondary" (click)="closeStudentDetails()">
+                                <i class="fa-solid fa-xmark me-1"></i>
+                                Close
+                            </button>
+                        </div>
+
+                    </div>
                 </div>
-
-                <div class="card-body">
-                    @if (studentDetails()) {
-                    <p><strong><i class="fa-solid fa-user me-2"></i>Name:</strong>
-                        {{ studentDetails()!.data.name }}</p>
-                    <p><strong><i class="fa-solid fa-envelope me-2"></i>Email:</strong>
-                        {{ studentDetails()!.data.email }}</p>
-                    <p><strong><i class="fa-solid fa-calendar me-2"></i>Age:</strong>
-                        {{ studentDetails()!.data.age }}</p>
-                    <p><strong><i class="fa-solid fa-book-open me-2"></i>Course:</strong>
-                        {{ studentDetails()!.data.course.name }}</p>
-                    <p><strong><i class="fa-solid fa-hashtag me-2"></i>Course Code:</strong>
-                        {{ studentDetails()!.data.course.code }}</p>
-                    } @else {
-                    <p>Loading student details...</p>
-                    }
-                </div>
-
             </div>
+
+            <div class="modal-backdrop fade show"></div>
             }
 
             @if (showStudentForm()) {
-            <div class="card p-4 mb-4">
+            <div class="modal fade show d-block" tabindex="-1">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
 
-                <h5 class="mb-3">
-                    <i class="fa-solid fa-user-pen me-2"></i>
-                    {{ editingStudentId ? 'Edit Student' : 'Add New Student' }}
-                </h5>
+                        <div class="modal-header">
+                            <h5 class="modal-title">
+                                <i class="fa-solid fa-user-pen me-2"></i>
+                                {{ editingStudentId ? 'Edit Student' : 'Add New Student' }}
+                            </h5>
 
-                <form [formGroup]="studentForm" (ngSubmit)="editingStudentId ? saveStudentChanges() : createStudent()">
+                            <button type="button" class="btn-close" (click)="cancelStudentForm()">
+                            </button>
+                        </div>
 
-                    <div class="mb-3">
-                        <label class="form-label">Student Name</label>
-                        <input type="text" class="form-control" formControlName="name" placeholder="Enter student name">
+                        <div class="modal-body">
+
+                            <form [formGroup]="studentForm"
+                                (ngSubmit)="editingStudentId ? saveStudentChanges() : createStudent()">
+
+
+                                <div class="mb-3">
+                                    <label class="form-label">Student Name</label>
+
+                                    <input type="text" class="form-control" formControlName="name"
+                                        placeholder="Enter student name"
+                                        [class.is-invalid]="studentForm.controls.name.invalid && studentForm.controls.name.touched">
+
+                                    @if (studentForm.controls.name.touched &&
+                                    studentForm.controls.name.hasError('required')) {
+                                    <small class="text-danger">
+                                        Student name is required.
+                                    </small>
+                                    }
+
+                                    @if (studentForm.controls.name.touched &&
+                                    studentForm.controls.name.hasError('minlength')) {
+                                    <small class="text-danger">
+                                        Student name must contain at least 2 characters.
+                                    </small>
+                                    }
+                                </div>
+
+
+
+                                <div class="mb-3">
+                                    <label class="form-label">Email Address</label>
+
+                                    <input type="email" class="form-control" formControlName="email"
+                                        placeholder="Enter email address"
+                                        [class.is-invalid]="studentForm.controls.email.invalid && studentForm.controls.email.touched">
+
+                                    @if (studentForm.controls.email.touched &&
+                                    studentForm.controls.email.hasError('required')) {
+                                    <small class="text-danger">
+                                        Email address is required.
+                                    </small>
+                                    }
+
+                                    @if (studentForm.controls.email.touched &&
+                                    studentForm.controls.email.hasError('email')) {
+                                    <small class="text-danger">
+                                        Please enter a valid email address.
+                                    </small>
+                                    }
+                                </div>
+
+
+
+                                <div class="mb-3">
+                                    <label class="form-label">Age</label>
+
+                                    <input type="number" class="form-control" formControlName="age"
+                                        placeholder="Enter student age"
+                                        [class.is-invalid]="studentForm.controls.age.invalid && studentForm.controls.age.touched">
+
+                                    @if (studentForm.controls.age.touched &&
+                                    studentForm.controls.age.hasError('required')) {
+                                    <small class="text-danger">
+                                        Age is required.
+                                    </small>
+                                    }
+
+                                    @if (studentForm.controls.age.touched && studentForm.controls.age.hasError('min')) {
+                                    <small class="text-danger">
+                                        Age must be at least 1.
+                                    </small>
+                                    }
+
+                                    @if (studentForm.controls.age.touched && studentForm.controls.age.hasError('max')) {
+                                    <small class="text-danger">
+                                        Age cannot exceed 100.
+                                    </small>
+                                    }
+                                </div>
+
+
+
+                                <div class="mb-3">
+                                    <label class="form-label">Course</label>
+
+                                    <select class="form-select" formControlName="course"
+                                        [class.is-invalid]="studentForm.controls.course.invalid && studentForm.controls.course.touched">
+
+                                        <option value="" disabled>Select a course</option>
+
+                                        @for (course of courses; track course._id) {
+                                        <option [value]="course._id">
+                                            {{ course.name }}
+                                        </option>
+                                        }
+                                    </select>
+
+                                    @if (studentForm.controls.course.touched &&
+                                    studentForm.controls.course.hasError('required')) {
+                                    <small class="text-danger">
+                                        Please select a course.
+                                    </small>
+                                    }
+                                </div>
+                                <div class="mb-3">
+                                    <label for="profileImage" class="form-label">Profile Picture</label>
+
+                                    <input type="file" id="profileImage" class="form-control"
+                                        accept="image/png, image/jpeg, image/webp"
+                                        (change)="onProfileImageSelected($event)">
+
+                                    @if (editingStudentId) {
+                                    <button type="button" class="btn btn-outline-danger btn-sm mt-2"
+                                        (click)="removeExistingProfileImage()">
+                                        <i class="fa-solid fa-trash me-1"></i>
+                                        Remove Profile Picture
+                                    </button>
+                                    }
+                                </div>
+
+
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fa-solid fa-floppy-disk me-2"></i>
+                                    {{ editingStudentId ? 'Update Student' : 'Save Student' }}
+                                </button>
+
+                                <button type="button" class="btn btn-secondary ms-2" (click)="cancelStudentForm()">
+                                    <i class="fa-solid fa-xmark me-1"></i>
+                                    Cancel
+                                </button>
+
+                            </form>
+                        </div>
+
                     </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">Email</label>
-                        <input type="email" class="form-control" formControlName="email"
-                            placeholder="Enter email address">
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">Age</label>
-                        <input type="number" class="form-control" formControlName="age" placeholder="Enter age">
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">Course</label>
-                        <select class="form-select" formControlName="course">
-                            <option value="">Select a course</option>
-
-                            @for (course of courses; track course._id) {
-                            <option [value]="course._id">{{ course.name }}</option>
-                            }
-                        </select>
-                    </div>
-
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fa-solid fa-floppy-disk me-2"></i>
-                        {{ editingStudentId ? 'Update Student' : 'Save Student' }}
-                    </button>
-
-                    <button type="button" class="btn btn-secondary ms-2" (click)="cancelStudentForm()">
-                        <i class="fa-solid fa-xmark me-1"></i>
-                        Cancel
-                    </button>
-
-                </form>
+                </div>
             </div>
+
+            <div class="modal-backdrop fade show"></div>
             }
 
             @if (dataLoaded()) {
@@ -177,9 +328,8 @@
                                 <td>{{ student.age }}</td>
 
                                 <td>
-                                    <button type="button" class="btn btn-sm btn-info me-2"
-                                        (click)="viewStudent(student._id)">
-                                        <i class="fa-solid fa-eye me-1"></i>
+                                    <button class="action-label view" (click)="viewStudent(student._id)">
+                                        <i class="fa-solid fa-eye"></i>
                                         View
                                     </button>
 
@@ -218,5 +368,74 @@
             }
 
         </main>
+        @if (showImportResults()) {
+        <div class="modal fade show d-block" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content import-modal">
+
+                    <div class="modal-header">
+                        <h5 class="modal-title">Excel Import Results</h5>
+                    </div>
+
+                    <div class="modal-body">
+                        @if (importResult(); as result) {
+
+                        <div class="row g-3">
+
+                            <div class="col-6">
+                                <div class="border rounded p-3 text-center">
+                                    <i class="fa-solid fa-file-excel text-success fs-4"></i>
+                                    <h4 class="mt-2">{{ result.totalRecords }}</h4>
+                                    <small class="text-muted">Total Records</small>
+                                </div>
+                            </div>
+
+                            <div class="col-6">
+                                <div class="border rounded p-3 text-center">
+                                    <i class="fa-solid fa-user-check text-success fs-4"></i>
+                                    <h4 class="mt-2">{{ result.importedCount }}</h4>
+                                    <small class="text-muted">Imported</small>
+                                </div>
+                            </div>
+
+                            <div class="col-6">
+                                <div class="border rounded p-3 text-center">
+                                    <i class="fa-solid fa-user-xmark text-danger fs-4"></i>
+                                    <h4 class="mt-2">{{ result.failedCount }}</h4>
+                                    <small class="text-muted">Failed</small>
+                                </div>
+                            </div>
+
+                            <div class="col-6">
+                                <div class="border rounded p-3 text-center">
+                                    <i class="fa-solid fa-envelope-circle-check text-success fs-4"></i>
+                                    <h4 class="mt-2">{{ result.emailSentCount }}</h4>
+                                    <small class="text-muted">Emails Sent</small>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <hr>
+
+                        <p class="mb-0">
+                            <i class="fa-solid fa-envelope-circle-check text-success me-2"></i>
+                            Email Failures: <strong>{{ result.emailFailedCount }}</strong>
+                        </p>
+
+                        }
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" (click)="showImportResults.set(false)">
+                            <i class="fa-solid fa-xmark me-1"></i>
+                            Close
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+        }
     </div>
 </div>

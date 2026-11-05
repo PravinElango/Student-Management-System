@@ -8,7 +8,8 @@ const courseSchema = new mongoose.Schema({
         required: [true, "Course name is required!"],
         trim: true,
         minlength: [2, "Course name must contain at least 2 characters!"],
-        maxlength: [100, "Course name cannot exceed 100 characters!"]
+        maxlength: [100, "Course name cannot exceed 100 characters!"],
+        uppercase: true
     },
 
     code: {

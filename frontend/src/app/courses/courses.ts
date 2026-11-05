@@ -74,7 +74,10 @@ export class Courses implements OnInit {
   courseForm = this.fb.group({
     name: ['', [Validators.required, Validators.minLength(2)]],
     code: ['', [Validators.required]],
-    subjects: ['', [Validators.required]]
+    subjects: ['', [
+      Validators.required,
+      Validators.pattern(/.*\S.*/)
+    ]]
   });
 
   showCourseForm = signal(false);

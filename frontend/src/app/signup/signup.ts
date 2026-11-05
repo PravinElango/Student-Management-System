@@ -16,7 +16,7 @@ export class Signup {
     {
       username: new FormControl('',
         [Validators.required,
-        Validators.minLength(3)]), 
+        Validators.minLength(3)]),
       email: new FormControl('',
         [Validators.required,
         Validators.email],
@@ -39,5 +39,5 @@ export class Signup {
         }
       })
     };
-    
+
 }

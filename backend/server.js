@@ -8,6 +8,10 @@ const Students = require("./models/Students");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
 
+require("dotenv").config();
+console.log("Email user loaded:", !!process.env.EMAIL_USER);
+console.log("Email password loaded:", !!process.env.EMAIL_PASS);
+const transporter = require("./config/emailConfig");
 
 //loads .env variables to process.env
 require("dotenv").config();

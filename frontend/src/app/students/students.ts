@@ -3,7 +3,6 @@ import { HttpClient } from "@angular/common/http";
 import { Router, RouterLink, ActivatedRoute, NavigationEnd } from "@angular/router";
 import { ReactiveFormsModule, FormBuilder, Validators, FormControl } from "@angular/forms";
 import { AuthService } from '../services/auth';
-import * as XLSX from 'xlsx';
 import { filter } from 'rxjs';
 
 interface Student {
@@ -33,7 +32,8 @@ interface CourseResponse {
 
 interface StudentActionResponse {
   message: string;
-  data: Student;
+  emailSent?: boolean;
+  data: any;
 }
 
 interface StudentDeleteResponse {
@@ -44,6 +44,25 @@ interface StudentCourse {
   _id: string;
   name: string;
   code: string;
+}
+
+interface ImportRecord {
+  row: number;
+  name: string;
+  email?: string;
+  status?: string;
+  reason?: string;
+}
+
+interface ImportResponse {
+  message: string;
+  totalRecords: number;
+  importedCount: number;
+  failedCount: number;
+  emailSentCount: number;
+  emailFailedCount: number;
+  importedRecords: ImportRecord[];
+  invalidRecords: ImportRecord[];
 }
 
 @Component({
@@ -70,11 +89,16 @@ export class Students implements OnInit {
   studentAction: StudentActionResponse | null = null;
   studentDelete: StudentDeleteResponse | null = null;
   studentDetails = signal<StudentActionResponse | null>(null);
+  profileImageUrl: string | null = null;
   editingStudentId: string | null = null;
+  selectedProfileImage: File | null = null;
+  removeProfileImage = false;
   dataLoaded = signal(false);
   studentsLoaded = signal(false);
   coursesLoaded = signal(false);
   showStudentDetails = signal(false);
+  showImportResults = signal(false);
+  importResult = signal<ImportResponse | null>(null);
   pageMode = signal<'list' | 'view' | 'edit'>('list');
   ngOnInit() {
     this.loadStudents();
@@ -153,25 +177,39 @@ export class Students implements OnInit {
       return;
     }
 
-    const studentData = {
-      ...this.studentForm.value,
-      age: Number(this.studentForm.value.age)
-    };
-    console.log("Payload", studentData);
+    const studentData = new FormData();
 
-    this.http.post<StudentActionResponse>("http://localhost:3000/api/students/create", studentData)
-      .subscribe({
-        next: (response) => {
-          this.studentAction = response
-          this.studentForm.reset();
-          this.showStudentForm.set(false);
-          console.log("Student response:", response.data);
-          this.loadStudents();
-        },
-        error: (error) => {
-          console.log(error)
+    studentData.append("name", this.studentForm.value.name!);
+    studentData.append("email", this.studentForm.value.email!);
+    studentData.append("age", String(this.studentForm.value.age));
+    studentData.append("course", this.studentForm.value.course!);
+
+    if (this.selectedProfileImage) {
+      studentData.append("profileImage", this.selectedProfileImage);
+    }
+
+    this.http.post<StudentActionResponse>(
+      "http://localhost:3000/api/students/create",
+      studentData
+    ).subscribe({
+      next: (response) => {
+        this.studentAction = response;
+
+        if (response.emailSent) {
+          alert("Student created successfully! Registration email sent.");
+        } else {
+          alert("Student created successfully, but the registration email could not be sent.");
         }
-      })
+
+        this.studentForm.reset();
+        this.selectedProfileImage = null;
+        this.showStudentForm.set(false);
+        this.loadStudents();
+      },
+      error: (error) => {
+        console.log("Student creation error:", error);
+      }
+    });
   }
 
   updateStudent(studentId: string) {
@@ -193,63 +231,103 @@ export class Students implements OnInit {
       })
   }
 
-  getStudentDetails(studentId: string) {
-    this.http.post<StudentActionResponse>(`http://localhost:3000/api/students/${studentId}/details`, {})
-      .subscribe({
-        next: (response) => {
-          this.studentDetails.set(response);
-          console.log("Student details API response:", response);
-          console.log("Course received:", response.data.course);
-          console.log("Complete student:", response.data);
-          this.studentForm.patchValue({
-            name: response.data.name,
-            email: response.data.email,
-            age: response.data.age,
-            course: response.data.course._id
-          });
-          if (this.pageMode() === 'edit') {
-            this.showStudentForm.set(true);
-            this.showStudentDetails.set(false);
-          } else {
-            this.showStudentForm.set(false);
-            this.showStudentDetails.set(true);
-          }
 
-          console.log(response.message);
-        },
-        error: (error) => {
-          console.log(error)
+  getStudentDetails(studentId: string) {
+    this.http.post<StudentActionResponse>(
+      `http://localhost:3000/api/students/${studentId}/details`,
+      {}
+    ).subscribe({
+      next: (response) => {
+
+        this.studentDetails.set(response);
+
+        console.log("Student details API response:", response);
+        console.log("Course received:", response.data.course);
+        console.log("Complete student:", response.data);
+
+        this.studentForm.patchValue({
+          name: response.data.name,
+          email: response.data.email,
+          age: response.data.age,
+          course: response.data.course._id
+        });
+
+        if (this.pageMode() === 'edit') {
+
+          this.selectedProfileImage = null;
+          this.removeProfileImage = false;
+
+          this.showStudentForm.set(true);
+          this.showStudentDetails.set(false);
+
+        } else {
+
+          this.showStudentForm.set(false);
+          this.showStudentDetails.set(true);
         }
-      })
+
+        console.log(response.message);
+      },
+      error: (error) => {
+        console.log(error);
+      }
+    });
   }
 
+
+
   saveStudentChanges() {
+
     if (this.studentForm.invalid) {
       this.studentForm.markAllAsTouched();
       return;
     }
+
     if (!this.editingStudentId) {
       return;
     }
 
-    const studentData = {
-      ...this.studentForm.value,
-      age: Number(this.studentForm.value.age)
-    };
+    const studentData = new FormData();
+
+    studentData.append("name", this.studentForm.value.name!);
+    studentData.append("email", this.studentForm.value.email!);
+    studentData.append("age", String(this.studentForm.value.age));
+    studentData.append("course", this.studentForm.value.course!);
+
+    if (this.selectedProfileImage) {
+      studentData.append("profileImage", this.selectedProfileImage);
+    }
+
+    if (this.removeProfileImage) {
+      studentData.append("removeProfileImage", "true");
+    }
+
     this.http.post<StudentActionResponse>(
-      `http://localhost:3000/api/students/${this.editingStudentId}/update`, studentData).subscribe({
-        next: (response) => {
-          console.log("Student updated:", response.data);
-          this.loadStudents();
-          this.studentForm.reset();
-          this.showStudentForm.set(false);
-          this.editingStudentId = null;
-        },
-        error: (error) => {
-          console.log(error);
-        }
-      });
+      `http://localhost:3000/api/students/${this.editingStudentId}/update`,
+      studentData
+    ).subscribe({
+      next: (response) => {
+
+        alert(response.message || "Student updated successfully!");
+
+        console.log("Student updated:", response.data);
+
+        this.loadStudents();
+
+        this.studentForm.reset();
+        this.selectedProfileImage = null;
+        this.removeProfileImage = false;
+
+        this.showStudentForm.set(false);
+        this.editingStudentId = null;
+        this.router.navigate(['/students']);
+      },
+      error: (error) => {
+        console.log("Student update error:", error);
+      }
+    });
   }
+
 
   openAddStudentForm() {
     this.editingStudentId = null;
@@ -270,12 +348,16 @@ export class Students implements OnInit {
   }
 
   viewStudent(studentId: string) {
-    this.router.navigate(['/students', studentId]);
+    this.pageMode.set('view');
+    this.showStudentDetails.set(true);
+    this.getStudentDetails(studentId);
+    this.loadProfileImage(studentId);
   }
 
   closeStudentDetails() {
     this.showStudentDetails.set(false);
-    this.router.navigate(['/students']);
+    this.studentDetails.set(null);
+    this.pageMode.set('list');
   }
   logout() {
     this.authService.logout();
@@ -299,6 +381,98 @@ export class Students implements OnInit {
         }
       })
 
+  }
+
+  importStudents(event: Event) {
+
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    this.http.post<ImportResponse>(
+      'http://localhost:3000/api/students/import',
+      formData
+    ).subscribe({
+      next: (response) => {
+        console.log("Import response:", response);
+
+        this.importResult.set(response);
+        this.showImportResults.set(true);
+
+        this.loadStudents();
+
+        input.value = '';
+      },
+      error: (error) => {
+        console.log("Import error:", error);
+
+        alert(error.error?.message || "Excel import failed!");
+
+        input.value = '';
+      }
+    });
+  }
+
+  loadProfileImage(studentId: string) {
+    this.http.get(
+      `http://localhost:3000/api/students/${studentId}/profile-image`,
+      { responseType: 'blob' }
+    ).subscribe({
+      next: (imageBlob) => {
+        this.profileImageUrl = URL.createObjectURL(imageBlob);
+      },
+      error: (error) => {
+        console.log("Failed to load profile image:", error);
+        this.profileImageUrl = null;
+      }
+    });
+  }
+
+  onProfileImageSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+
+    if (file) {
+      this.selectedProfileImage = file;
+    }
+  }
+
+  removeExistingProfileImage() {
+    this.removeProfileImage = true;
+    this.selectedProfileImage = null;
+  }
+
+  downloadStudentPdf(studentId: string) {
+    if (!studentId) {
+      return;
+    }
+    this.http.post(
+      `http://localhost:3000/api/students/${studentId}/pdf`,
+      {},
+      { responseType: 'blob' }
+    ).subscribe({
+      next: (pdfBlob) => {
+        const pdfUrl = URL.createObjectURL(pdfBlob);
+
+        const link = document.createElement('a');
+        link.href = pdfUrl;
+        link.download = 'student-profile.pdf';
+
+        link.click();
+
+        URL.revokeObjectURL(pdfUrl);
+      },
+      error: (error) => {
+        console.error("PDF download failed:", error);
+        alert("Failed to download student PDF!");
+      }
+    });
   }
 }
 

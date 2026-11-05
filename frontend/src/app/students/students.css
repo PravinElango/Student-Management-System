@@ -67,13 +67,53 @@
     color: #495057;
 }
 
+
 .action-label {
-    display: inline-block;
-    margin-right: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 6px 12px;
+    margin-right: 8px;
+    border: 1px solid transparent;
+    border-radius: 6px;
     font-size: 13px;
     font-weight: 600;
     cursor: pointer;
+    transition: all 0.2s ease;
+    background-color: transparent;
 }
+
+.action-label.view {
+    color: #0d6efd;
+    background-color: #e7f0ff;
+}
+
+.action-label.view:hover {
+    color: #ffffff;
+    background-color: #0d6efd;
+}
+
+.action-label.edit {
+    color: #198754;
+    background-color: #e8f5ee;
+}
+
+.action-label.edit:hover {
+    color: #ffffff;
+    background-color: #198754;
+}
+
+.action-label.delete {
+    color: #dc3545;
+    background-color: #fcebed;
+}
+
+.action-label.delete:hover {
+    color: #ffffff;
+    background-color: #dc3545;
+}
+
 
 .view {
     color: #0d6efd;
@@ -85,4 +125,43 @@
 
 .delete {
     color: #dc3545;
+}
+
+.student-profile-image {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-bottom: 15px;
+}
+
+.default-profile {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background-color: #e9ecef;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 15px;
+}
+
+.default-profile i {
+    font-size: 65px;
+    color: #6c757d;
+}
+
+.import-modal {
+    background-color: #c1e4bf;
+    border: 1px solid #d1d9e6;
+    border-radius: 12px;
+}
+
+.import-modal .modal-header {
+    background-color: #76abf2;
+    border-bottom: 1px solid #000000;
+}
+
+.import-modal .modal-footer {
+    border-top: 1px solid #000000;
 }
