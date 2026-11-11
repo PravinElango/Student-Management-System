@@ -12,11 +12,10 @@ const sendEmail = require("../utils/sendEmail");
 
 console.log("Student routes file loaded!");
 router.use(authMiddleware);
+const Class = require("../models/Class");
 
 // To create student
 router.post("/create", profileImage.single("profileImage"), async (req, res) => {
-    console.log("Body:", req.body);
-    console.log("File:", req.file);
     try {
         const course = await Course.findById(req.body.course);
 
@@ -25,25 +24,83 @@ router.post("/create", profileImage.single("profileImage"), async (req, res) => 
                 message: "Course not found!"
             });
         }
-        const studentData = { ...req.body };
+
+        let assignedClass = null;
+
+        // Check whether admin manually selected a class
+        if (req.body.class) {
+            assignedClass = await Class.findOne({
+                _id: req.body.class,
+                course: course._id,
+                status: "Active"
+            });
+
+            if (!assignedClass) {
+                return res.status(400).json({
+                    message: "Selected class is invalid or inactive!"
+                });
+            }
+
+            const enrolledStudents = await Students.countDocuments({
+                class: assignedClass._id
+            });
+
+            if (enrolledStudents >= assignedClass.capacity) {
+                return res.status(400).json({
+                    message: "Selected class has reached its capacity!"
+                });
+            }
+        } else {
+            // Find active classes belonging to the selected course
+            const availableClasses = await Class.find({
+                course: course._id,
+                status: "Active"
+            }).sort({ startDate: 1, _id: 1 });
+
+            // Find the first class with available seats
+            for (const currentClass of availableClasses) {
+                const enrolledStudents = await Students.countDocuments({
+                    class: currentClass._id
+                });
+
+                if (enrolledStudents < currentClass.capacity) {
+                    assignedClass = currentClass;
+                    break;
+                }
+            }
+        }
+
+        // Prepare student data
+        const studentData = {
+            ...req.body,
+            course: course._id,
+            class: assignedClass ? assignedClass._id : undefined
+        };
+
+        // Attach uploaded profile image
         if (req.file) {
             studentData.profileImage = {
                 data: req.file.buffer,
                 contentType: req.file.mimetype
             };
         }
+
         const student = await Students.create(studentData);
+
+        // Send registration email
         let emailSent = false;
+
         try {
             await sendEmail(
                 student.email,
                 "Student Registration Successful",
                 `
-            <h2>Welcome, ${student.name}!</h2>
-            <p>Your student registration has been completed successfully.</p>
-            <p><strong>Course:</strong> ${course.name}</p>
-            <p>Thank you for registering with us!</p>
-        `
+                    <h2>Welcome, ${student.name}!</h2>
+                    <p>Your student registration has been completed successfully.</p>
+                    <p><strong>Course:</strong> ${course.name}</p>
+                    <p><strong>Class:</strong> ${assignedClass ? assignedClass.name : "Not Assigned"}</p>
+                    <p>Thank you for registering with us!</p>
+                `
             );
 
             emailSent = true;
@@ -51,14 +108,16 @@ router.post("/create", profileImage.single("profileImage"), async (req, res) => 
         } catch (emailError) {
             console.error("Registration email failed:", emailError);
         }
-        res.status(201).json({
+
+        return res.status(201).json({
             message: "Student created successfully!",
             emailSent,
+            assignedClass: assignedClass ? assignedClass.name : null,
             data: student
         });
 
     } catch (error) {
-        res.status(400).json({
+        return res.status(400).json({
             message: "Failed to create Student!",
             error: error.message
         });
@@ -66,11 +125,13 @@ router.post("/create", profileImage.single("profileImage"), async (req, res) => 
 });
 
 
+
 // to list all students
 router.post("/list", async (req, res) => {
     try {
         const students = await Students.find()
-            .populate("course", "name code");
+            .populate("course", "name code")
+            .populate("class", "name code capacity");
 
         res.status(200).json({
             message: "Students data fetched successfully!",
@@ -90,7 +151,8 @@ router.post("/list", async (req, res) => {
 router.post("/:studentId/details", async (req, res) => {
     try {
         const student = await Students.findById(req.params.studentId)
-            .populate("course", "name code");
+            .populate("course", "name code")
+            .populate("class", "name code capacity");
 
         if (!student) {
             return res.status(404).json({
@@ -273,43 +335,55 @@ router.post("/export", async (req, res) => {
     }
 });
 
+
 router.post("/import", upload.single("file"), async (req, res) => {
     try {
         const file = req.file;
+
         if (!file) {
             return res.status(400).json({
                 message: "Please upload an Excel file!"
             });
         }
+
         const workbook = XLSX.read(file.buffer, {
             type: "buffer"
         });
+
         const sheetName = workbook.SheetNames[0];
+
         if (!sheetName) {
             return res.status(400).json({
                 message: "Excel file contains no worksheets!"
             });
         }
-        const worksheet = workbook.Sheets[sheetName];
 
+        const worksheet = workbook.Sheets[sheetName];
         const students = XLSX.utils.sheet_to_json(worksheet);
+
         const requiredColumns = ["Name", "Email", "Age", "Course"];
         const columns = Object.keys(students[0] || {});
+
         const missingColumns = requiredColumns.filter(
             column => !columns.includes(column)
         );
+
         if (missingColumns.length > 0) {
             return res.status(400).json({
                 message: "Excel file is missing required columns!",
                 missingColumns
             });
         }
+
         const importedRecords = [];
         const invalidRecords = [];
+
         let emailSentCount = 0;
         let emailFailedCount = 0;
+
         for (let i = 0; i < students.length; i++) {
             const student = students[i];
+
             try {
                 const courseName = student.Course.trim().toUpperCase();
 
@@ -325,37 +399,70 @@ router.post("/import", upload.single("file"), async (req, res) => {
                     });
                     continue;
                 }
+
+                // Find active classes for this course
+                const availableClasses = await Class.find({
+                    course: course._id,
+                    status: "Active"
+                }).sort({ startDate: 1, _id: 1 });
+
+                let assignedClass = null;
+
+                // Find the first class with available capacity
+                for (const currentClass of availableClasses) {
+                    const enrolledStudents = await Students.countDocuments({
+                        class: currentClass._id
+                    });
+
+                    if (enrolledStudents < currentClass.capacity) {
+                        assignedClass = currentClass;
+                        break;
+                    }
+                }
+
+                // Create student with automatic class assignment
                 const newStudent = await Students.create({
                     name: student.Name,
                     email: student.Email,
                     age: student.Age,
-                    course: course._id
+                    course: course._id,
+                    class: assignedClass ? assignedClass._id : undefined
                 });
+
+                // Send registration email
                 try {
                     await sendEmail(
                         newStudent.email,
                         "Student Registration Successful",
                         `
-            <h2>Welcome, ${newStudent.name}!</h2>
-            <p>Your student registration has been completed successfully.</p>
-            <p><strong>Course:</strong> ${course.name}</p>
-            <p>Thank you for registering with us!</p>
-        `
+                            <h2>Welcome, ${newStudent.name}!</h2>
+                            <p>Your student registration has been completed successfully.</p>
+                            <p><strong>Course:</strong> ${course.name}</p>
+                            <p><strong>Class:</strong> ${assignedClass ? assignedClass.name : "Not Assigned"}</p>
+                            <p>Thank you for registering with us!</p>
+                        `
                     );
+
                     emailSentCount++;
+
                 } catch (emailError) {
                     emailFailedCount++;
+
                     console.error(
                         `Email failed for ${newStudent.email}:`,
                         emailError.message
                     );
                 }
+
                 importedRecords.push({
                     row: i + 2,
                     name: newStudent.name,
                     email: newStudent.email,
+                    course: course.name,
+                    class: assignedClass ? assignedClass.name : null,
                     status: "Imported"
                 });
+
             } catch (error) {
                 invalidRecords.push({
                     row: i + 2,
@@ -364,7 +471,8 @@ router.post("/import", upload.single("file"), async (req, res) => {
                 });
             }
         }
-        res.status(200).json({
+
+        return res.status(200).json({
             message: "Excel import completed!",
             totalRecords: students.length,
             importedCount: importedRecords.length,
@@ -374,13 +482,15 @@ router.post("/import", upload.single("file"), async (req, res) => {
             importedRecords,
             invalidRecords
         });
+
     } catch (error) {
-        res.status(500).json({
+        return res.status(500).json({
             message: "Excel file processing failed!",
             error: error.message
         });
     }
 });
+
 
 router.get("/:id/profile-image", async (req, res) => {
     try {

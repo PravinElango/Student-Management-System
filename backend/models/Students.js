@@ -48,6 +48,19 @@ const studentSchema = new mongoose.Schema({
     profileImage: {
         data: Buffer,
         contentType: String
+    },
+    admissionDate: {
+        type: Date,
+        default: Date.now
+    },
+    status: {
+        type: String,
+        enum: ["Active", "Inactive", "Graduated"],
+        default: "Active"
+    },
+    class: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Class"
     }
 });
 

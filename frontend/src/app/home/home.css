@@ -54,3 +54,59 @@
     padding: 24px;
     min-width: 0;
 }
+
+
+.admissions-card {
+    min-height: 320px;
+}
+
+.admissions-card h5 {
+    font-weight: 600;
+}
+
+.admissions-chart {
+    display: flex;
+    align-items: flex-end;
+    justify-content: flex-start;
+    gap: 30px;
+    min-height: 230px;
+    overflow-x: auto;
+    padding: 15px 10px 0;
+}
+
+.admission-column {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    min-width: 65px;
+    height: 210px;
+}
+
+.admission-count {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.admission-bar-container {
+    height: 150px;
+    width: 42px;
+    display: flex;
+    align-items: flex-end;
+}
+
+.admission-bar {
+    width: 100%;
+    background: #4e73df;
+    border-radius: 6px 6px 0 0;
+    min-height: 4px;
+    transition: height 0.3s ease;
+}
+
+.admission-month {
+    font-size: 12px;
+    color: #6c757d;
+    margin-top: 10px;
+    white-space: nowrap;
+}

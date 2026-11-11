@@ -11,7 +11,6 @@ const courseSchema = new mongoose.Schema({
         maxlength: [100, "Course name cannot exceed 100 characters!"],
         uppercase: true
     },
-
     code: {
         type: String,
         required: [true, "Course code is required!"],
@@ -25,12 +24,25 @@ const courseSchema = new mongoose.Schema({
             "Invalid course code!"
         ]
     },
-
     subjects: {
-        type:[String],
+        type: [String],
         default: []
+    },
+    duration: {
+        type: Number,
+        required: [true, "Course duration is required!"],
+        min: [1, "Course duration must be at least 1!"],
+        validate: {
+            validator: Number.isInteger,
+            message: "Course duration must be a whole number!"
+        }
+    },
+    durationUnit: {
+        type: String,
+        required: true,
+        enum: ["Days", "Weeks", "Months", "Years"],
+        default: "Months"
     }
-
 }, { timestamps: true });
 
 module.exports = mongoose.model("Course", courseSchema);

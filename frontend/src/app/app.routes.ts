@@ -5,6 +5,8 @@ import { Home } from './home/home'
 import { Students } from './students/students'
 import { Courses } from './courses/courses';
 import { authGuard } from './guards/auth-guard';
+import { Classes } from './classes/classes';
+import { Attendance } from './attendance/attendance';
 
 export const routes: Routes = [
     { path: 'signup', component: Signup },
@@ -15,5 +17,9 @@ export const routes: Routes = [
     { path: 'courses/:courseId/edit', component: Courses, canActivate: [authGuard] },
     { path: 'courses/:courseId', component: Courses, canActivate: [authGuard] },
     { path: "courses", component: Courses, canActivate: [authGuard] },
-    { path: "home", component: Home, canActivate: [authGuard] }
+    { path: "home", component: Home, canActivate: [authGuard] },
+    { path: 'classes/:classId/edit', component: Classes, canActivate: [authGuard] },
+    { path: 'classes/:classId', component: Classes, canActivate: [authGuard] },
+    { path: 'classes', component: Classes, canActivate: [authGuard] },
+    { path: 'attendance', component: Attendance, canActivate: [authGuard] },
 ];

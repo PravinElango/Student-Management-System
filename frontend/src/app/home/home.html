@@ -43,6 +43,20 @@
                         </a>
                     </li>
 
+                    <li class="nav-item">
+                        <a class="nav-link" routerLink="/classes">
+                            <i class="fa-solid fa-book-open me-2"></i>
+                            Classes
+                        </a>
+                    </li>
+                    
+                    <li class="nav-item">
+                        <a class="nav-link" routerLink="/attendance">
+                            <i class="fa-solid fa-book-open me-2"></i>
+                            Attendance
+                        </a>
+                    </li>
+
                 </ul>
             </nav>
         </aside>
@@ -58,35 +72,96 @@
             </div>
 
             @if (dataLoaded()) {
-                <div class="row g-4">
 
-                    <div class="col-md-6">
-                        <div class="card dashboard-card p-4">
-                            <div class="d-flex align-items-center gap-3">
-                                <i class="fa-solid fa-users stat-icon"></i>
-                                <div>
-                                    <h6>Total Students</h6>
-                                    <h3>{{totalStudents}}</h3>
-                                </div>
+            <div class="row g-4">
+
+                <div class="col-md-6">
+                    <div class="card dashboard-card p-4">
+                        <div class="d-flex align-items-center gap-3">
+                            <i class="fa-solid fa-users stat-icon"></i>
+                            <div>
+                                <h6>Total Students</h6>
+                                <h3>{{ totalStudents }}</h3>
                             </div>
                         </div>
                     </div>
+                </div>
 
-                    <div class="col-md-6">
-                        <div class="card dashboard-card p-4">
-                            <div class="d-flex align-items-center gap-3">
-                                <i class="fa-solid fa-book stat-icon"></i>
-                                <div>
-                                    <h6>Total Courses</h6>
-                                    <h3>{{totalCourses}}</h3>
-                                </div>
+                <div class="col-md-6">
+                    <div class="card dashboard-card p-4">
+                        <div class="d-flex align-items-center gap-3">
+                            <i class="fa-solid fa-book stat-icon"></i>
+                            <div>
+                                <h6>Total Courses</h6>
+                                <h3>{{ totalCourses }}</h3>
                             </div>
                         </div>
                     </div>
+                </div>
+
+            </div>
+
+            <!-- Monthly Admissions Chart -->
+            <div class="card dashboard-card admissions-card mt-4 p-4">
+
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h5>Monthly Student Admissions</h5>
+                        <p class="text-muted mb-0">
+                            Student admission statistics by month
+                        </p>
+                    </div>
+
+                    <i class="fa-solid fa-chart-column stat-icon"></i>
+                </div>
+
+                @if (monthlyAdmissionsError()) {
+
+                <p class="text-danger">
+                    Unable to load monthly admissions.
+                </p>
+
+                } @else if (monthlyAdmissions.length === 0) {
+
+                <p class="text-muted text-center py-4">
+                    No monthly admission data available.
+                </p>
+
+                } @else {
+
+                <div class="admissions-chart">
+
+                    @for (item of monthlyAdmissions; track item.month) {
+
+                    <div class="admission-column">
+
+                        <span class="admission-count">
+                            {{ item.totalAdmissions }}
+                        </span>
+
+                        <div class="admission-bar-container">
+                            <div class="admission-bar" [style.height.%]="getBarHeight(item.totalAdmissions)">
+                            </div>
+                        </div>
+
+                        <span class="admission-month">
+                            {{ getMonthLabel(item.month) }}
+                        </span>
+
+                    </div>
+
+                    }
 
                 </div>
+
+                }
+
+            </div>
+
             } @else {
-                <p>Loading dashboard...</p>
+
+            <p>Loading dashboard...</p>
+
             }
 
         </main>

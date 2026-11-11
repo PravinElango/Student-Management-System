@@ -39,8 +39,19 @@ app.use("/api/students",studentRoutes);
 const authRoutes = require("./routes/authRoutes");
 app.use("/api/auth",authRoutes);
 
+
 const courseRoutes = require("./routes/courseRoutes");
 app.use("/api/courses",courseRoutes);
+
+const analyticsRoutes = require("./routes/analyticsRoutes");
+app.use("/api/analytics", analyticsRoutes);
+
+const classRoutes = require("./routes/classRoutes");
+app.use("/api/classes", classRoutes);
+
+const attendanceRoutes = require("./routes/attendanceRoutes");
+
+app.use("/api/attendance", attendanceRoutes);
 
 //connecting mongodb atlas
 mongoose
