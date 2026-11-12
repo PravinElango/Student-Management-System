@@ -1,15 +1,12 @@
 
-const express = require("express");
-const router = express.Router();
 const Student = require("../models/Students");
 const Class = require("../models/Class");
 const Course = require("../models/Course");
-const authMiddleware = require("../middleware/authMiddleware");
-const mongoose = require("mongoose");
 const Attendance = require("../models/Attendance");
+const mongoose = require("mongoose");
 
-//create class
-router.post("/create", authMiddleware, async (req, res) => {
+// Create class
+const createClass = async (req, res) => {
     try {
         const {
             name,
@@ -23,7 +20,7 @@ router.post("/create", authMiddleware, async (req, res) => {
             status
         } = req.body;
 
-        //to verify the course exists
+        // Verify whether the course exists
         const existingCourse = await Course.findById(course);
 
         if (!existingCourse) {
@@ -57,11 +54,11 @@ router.post("/create", authMiddleware, async (req, res) => {
             error: error.message
         });
     }
-});
+};
 
 
-// List all Classes
-router.post("/list", authMiddleware, async (req, res) => {
+// List all classes
+const getClasses = async (req, res) => {
     try {
         const classes = await Class.find()
             .populate("course", "name code")
@@ -91,9 +88,11 @@ router.post("/list", authMiddleware, async (req, res) => {
             error: error.message
         });
     }
-});
+};
 
-router.post("/:id/details", authMiddleware, async (req, res) => {
+
+// Get class details
+const getClassDetails = async (req, res) => {
     try {
         const classId = req.params.id;
 
@@ -139,9 +138,11 @@ router.post("/:id/details", authMiddleware, async (req, res) => {
             error: error.message
         });
     }
-});
+};
 
-router.post("/:id/update", authMiddleware, async (req, res) => {
+
+// Update class
+const updateClass = async (req, res) => {
     try {
         const {
             name,
@@ -189,8 +190,15 @@ router.post("/:id/update", authMiddleware, async (req, res) => {
 
         // Update only the fields supplied by the admin
         const updates = {
-            name, code, course, capacity,
-            startDate, endDate, startTime, endTime, status
+            name,
+            code,
+            course,
+            capacity,
+            startDate,
+            endDate,
+            startTime,
+            endTime,
+            status
         };
 
         Object.entries(updates).forEach(([key, value]) => {
@@ -214,10 +222,11 @@ router.post("/:id/update", authMiddleware, async (req, res) => {
             error: error.message
         });
     }
-});
+};
 
 
-router.post("/:id/delete", authMiddleware, async (req, res) => {
+// Delete class
+const deleteClass = async (req, res) => {
     try {
         const existingClass = await Class.findById(req.params.id);
 
@@ -265,7 +274,14 @@ router.post("/:id/delete", authMiddleware, async (req, res) => {
             error: error.message
         });
     }
-});
+};
 
 
-module.exports = router;
+// Export controller functions
+module.exports = {
+    createClass,
+    getClasses,
+    getClassDetails,
+    updateClass,
+    deleteClass
+};

@@ -1,21 +1,16 @@
 
-const express = require("express");
-const router = express.Router();
-const authMiddleware = require("../middleware/authMiddleware");
 const Students = require("../models/Students");
 const Course = require("../models/Course");
-const XLSX = require("xlsx");
-const upload = require("../config/upload");
-const profileImage = require("../config/profileUpload");
-const PDFDocument = require("pdfkit");
-const sendEmail = require("../utils/sendEmail");
-
-console.log("Student routes file loaded!");
-router.use(authMiddleware);
 const Class = require("../models/Class");
 
+const XLSX = require("xlsx");
+const PDFDocument = require("pdfkit");
+
+const sendEmail = require("../utils/sendEmail");
+
+
 // To create student
-router.post("/create", profileImage.single("profileImage"), async (req, res) => {
+const createStudent = async (req, res) => {
     try {
         const course = await Course.findById(req.body.course);
 
@@ -50,6 +45,7 @@ router.post("/create", profileImage.single("profileImage"), async (req, res) => 
                     message: "Selected class has reached its capacity!"
                 });
             }
+
         } else {
             // Find active classes belonging to the selected course
             const availableClasses = await Class.find({
@@ -122,12 +118,11 @@ router.post("/create", profileImage.single("profileImage"), async (req, res) => 
             error: error.message
         });
     }
-});
+};
 
 
-
-// to list all students
-router.post("/list", async (req, res) => {
+// To list all students
+const getStudents = async (req, res) => {
     try {
         const students = await Students.find()
             .populate("course", "name code")
@@ -144,11 +139,11 @@ router.post("/list", async (req, res) => {
             error: error.message
         });
     }
-});
+};
 
 
-// to show student details
-router.post("/:studentId/details", async (req, res) => {
+// To show student details
+const getStudentDetails = async (req, res) => {
     try {
         const student = await Students.findById(req.params.studentId)
             .populate("course", "name code")
@@ -171,13 +166,11 @@ router.post("/:studentId/details", async (req, res) => {
             error: error.message
         });
     }
-});
+};
 
 
-// to update existing student
-router.post("/:studentId/update", profileImage.single("profileImage"), async (req, res) => {
-    console.log("Request body:", req.body);
-    console.log("Uploaded file:", req.file);
+// To update existing student
+const updateStudent = async (req, res) => {
     try {
         const student = await Students.findById(req.params.studentId);
 
@@ -210,15 +203,16 @@ router.post("/:studentId/update", profileImage.single("profileImage"), async (re
 
             student.course = req.body.course;
         }
+
         if (req.body.removeProfileImage === "true") {
             student.profileImage = undefined;
-        }
-        else if (req.file) {
+        } else if (req.file) {
             student.profileImage = {
                 data: req.file.buffer,
                 contentType: req.file.mimetype
             };
         }
+
         await student.save();
 
         res.status(200).json({
@@ -232,11 +226,11 @@ router.post("/:studentId/update", profileImage.single("profileImage"), async (re
             error: error.message
         });
     }
-});
+};
 
 
-// to delete a student
-router.post("/:studentId/delete", async (req, res) => {
+// To delete a student
+const deleteStudent = async (req, res) => {
     try {
         const student = await Students.findByIdAndDelete(
             req.params.studentId
@@ -258,15 +252,14 @@ router.post("/:studentId/delete", async (req, res) => {
             error: error.message
         });
     }
-});
+};
 
 
-// to filter students based on course
-router.post("/:courseId/filter", async (req, res) => {
+// To filter students based on course
+const filterStudentsByCourse = async (req, res) => {
     try {
         const { courseId } = req.params;
 
-        // Check whether courseId is provided
         if (!courseId) {
             return res.status(400).json({
                 message: "Course ID is required!"
@@ -288,20 +281,20 @@ router.post("/:courseId/filter", async (req, res) => {
             error: error.message
         });
     }
-});
+};
+
 
 // To export students to Excel
-router.post("/export", async (req, res) => {
+const exportStudents = async (req, res) => {
     try {
         const students = await Students.find().populate("course");
 
-
         const StudentData = students.map(student => ({
-            'Name': student.name,
-            'Email': student.email,
-            'Age': student.age,
-            'Adult Status': student.isAdult ? 'Adult' : 'Minor',
-            'Course': student.course ? student.course.name : 'Not Assigned'
+            "Name": student.name,
+            "Email": student.email,
+            "Age": student.age,
+            "Adult Status": student.isAdult ? "Adult" : "Minor",
+            "Course": student.course ? student.course.name : "Not Assigned"
         }));
 
         const worksheet = XLSX.utils.json_to_sheet(StudentData);
@@ -333,10 +326,11 @@ router.post("/export", async (req, res) => {
             error: error.message
         });
     }
-});
+};
 
 
-router.post("/import", upload.single("file"), async (req, res) => {
+// To import students from Excel
+const importStudents = async (req, res) => {
     try {
         const file = req.file;
 
@@ -489,10 +483,11 @@ router.post("/import", upload.single("file"), async (req, res) => {
             error: error.message
         });
     }
-});
+};
 
 
-router.get("/:id/profile-image", async (req, res) => {
+// To retrieve student profile image
+const getProfileImage = async (req, res) => {
     try {
         const student = await Students.findById(req.params.id);
 
@@ -501,11 +496,13 @@ router.get("/:id/profile-image", async (req, res) => {
                 message: "Student not found!"
             });
         }
+
         if (!student.profileImage || !student.profileImage.data) {
             return res.status(404).json({
                 message: "Profile image not found!"
             });
         }
+
         res.set("Content-Type", student.profileImage.contentType);
         res.send(student.profileImage.data);
 
@@ -515,9 +512,11 @@ router.get("/:id/profile-image", async (req, res) => {
             error: error.message
         });
     }
-});
+};
 
-router.post("/:studentId/pdf", async (req, res) => {
+
+// To generate student PDF
+const generateStudentPDF = async (req, res) => {
     try {
         const student = await Students.findById(req.params.studentId)
             .populate("course", "name code");
@@ -537,6 +536,7 @@ router.post("/:studentId/pdf", async (req, res) => {
         const studentPdf = new PDFDocument();
 
         res.set("Content-Type", "application/pdf");
+
         res.set(
             "Content-Disposition",
             'attachment; filename="student-profile.pdf"'
@@ -585,11 +585,14 @@ router.post("/:studentId/pdf", async (req, res) => {
             studentPdf
                 .circle(centerX, centerY - 18, 18)
                 .fill("#6c757d");
+
             studentPdf
                 .ellipse(centerX, centerY + 35, 38, 25)
                 .fill("#6c757d");
         }
+
         studentPdf.fillColor("#000000");
+
         const detailsX = 210;
         let detailsY = 145;
 
@@ -610,6 +613,7 @@ router.post("/:studentId/pdf", async (req, res) => {
         detailsY += 35;
 
         studentPdf.text(`Course Code: ${student.course.code}`, detailsX, detailsY);
+
         studentPdf.end();
 
     } catch (error) {
@@ -620,6 +624,19 @@ router.post("/:studentId/pdf", async (req, res) => {
             error: error.message
         });
     }
-});
+};
 
-module.exports = router;
+
+// Export controller functions
+module.exports = {
+    createStudent,
+    getStudents,
+    getStudentDetails,
+    updateStudent,
+    deleteStudent,
+    filterStudentsByCourse,
+    exportStudents,
+    importStudents,
+    getProfileImage,
+    generateStudentPDF
+};

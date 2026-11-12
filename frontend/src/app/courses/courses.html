@@ -1,3 +1,4 @@
+
 <div class="dashboard-container">
 
     <header class="top-navbar d-flex justify-content-between align-items-center px-4">
@@ -48,7 +49,7 @@
                             Classes
                         </a>
                     </li>
-                    
+
                     <li class="nav-item">
                         <a class="nav-link" routerLink="/attendance">
                             <i class="fa-solid fa-book-open me-2"></i>
@@ -70,6 +71,7 @@
                         Courses Available
                     </h3>
                 </div>
+
                 <div class="d-flex gap-2">
                     <button type="button" class="btn btn-success" (click)="exportCoursesToExcel()">
                         <i class="fa-solid fa-file-excel me-2"></i>
@@ -81,31 +83,30 @@
                         Add Course
                     </button>
                 </div>
-
             </div>
 
-
+            <!-- Course Details Modal -->
             @if (showCourseDetails() && courseDetails()) {
             <div class="modal fade show d-block" tabindex="-1">
                 <div class="modal-dialog modal-dialog-centered modal-xl">
                     <div class="modal-content">
 
-                        <!-- Modal Header -->
                         <div class="modal-header">
                             <h5 class="modal-title">
                                 <i class="fa-solid fa-book-open me-2"></i>
                                 Course Details
                             </h5>
 
-                            <button type="button" class="btn-close" aria-label="Close" (click)="closeStudentDetails()">
+                            <button type="button" class="btn-close"
+                                aria-label="Close" (click)="closeStudentDetails()">
                             </button>
                         </div>
 
-                        <!-- Modal Body -->
                         <div class="modal-body">
 
                             <!-- Course Information -->
                             <div class="row mb-4">
+
                                 <div class="col-md-4 mb-3">
                                     <label class="text-muted">Course Name</label>
                                     <h6>{{ courseDetails()!.data.course.name }}</h6>
@@ -114,6 +115,14 @@
                                 <div class="col-md-4 mb-3">
                                     <label class="text-muted">Course Code</label>
                                     <h6>{{ courseDetails()!.data.course.code }}</h6>
+                                </div>
+
+                                <div class="col-md-4 mb-3">
+                                    <label class="text-muted">Course Duration</label>
+                                    <h6>
+                                        {{ courseDetails()!.data.course.duration }}
+                                        {{ courseDetails()!.data.course.durationUnit }}
+                                    </h6>
                                 </div>
 
                                 <div class="col-md-4 mb-3">
@@ -130,6 +139,7 @@
                                         {{ courseDetails()!.data.course.subjects.join(', ') }}
                                     </p>
                                 </div>
+
                             </div>
 
                             <hr>
@@ -153,9 +163,9 @@
 
                                     <tbody>
                                         @for (
-                                        student of courseDetails()!.data.students;
-                                        track student._id;
-                                        let i = $index
+                                            student of courseDetails()!.data.students;
+                                            track student._id;
+                                            let i = $index
                                         ) {
                                         <tr>
                                             <td>{{ i + 1 }}</td>
@@ -177,9 +187,9 @@
 
                         </div>
 
-                        <!-- Modal Footer -->
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" (click)="closeStudentDetails()">
+                            <button type="button" class="btn btn-secondary"
+                                (click)="closeStudentDetails()">
                                 Close
                             </button>
                         </div>
@@ -191,8 +201,7 @@
             <div class="modal-backdrop fade show"></div>
             }
 
-
-
+            <!-- Add / Edit Course Modal -->
             @if (showCourseForm()) {
             <div class="modal fade show d-block" tabindex="-1">
                 <div class="modal-dialog modal-dialog-centered">
@@ -204,7 +213,8 @@
                                 {{ editingCourseId ? 'Edit Course' : 'Add New Course' }}
                             </h5>
 
-                            <button type="button" class="btn-close" aria-label="Close" (click)="cancelCourseForm()">
+                            <button type="button" class="btn-close"
+                                aria-label="Close" (click)="cancelCourseForm()">
                             </button>
                         </div>
 
@@ -213,11 +223,13 @@
                             <form [formGroup]="courseForm"
                                 (ngSubmit)="editingCourseId ? saveCourseChanges() : createCourse()">
 
-
+                                <!-- Course Name -->
                                 <div class="mb-3">
                                     <label class="form-label">Course Name</label>
 
-                                    <input type="text" class="form-control" formControlName="name"
+                                    <input type="text"
+                                        class="form-control"
+                                        formControlName="name"
                                         placeholder="Enter course name"
                                         [class.is-invalid]="courseForm.controls.name.invalid && courseForm.controls.name.touched">
 
@@ -234,16 +246,15 @@
                                         Course name must contain at least 2 characters.
                                     </small>
                                     }
-
-                                    
                                 </div>
 
-
-
+                                <!-- Course Code -->
                                 <div class="mb-3">
                                     <label class="form-label">Course Code</label>
 
-                                    <input type="text" class="form-control" formControlName="code"
+                                    <input type="text"
+                                        class="form-control"
+                                        formControlName="code"
                                         placeholder="Enter course code"
                                         [class.is-invalid]="courseForm.controls.code.invalid && courseForm.controls.code.touched">
 
@@ -255,15 +266,61 @@
                                     }
                                 </div>
 
+                                <!-- Course Duration and Unit -->
+                                <div class="row">
 
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Course Duration</label>
 
+                                        <input type="number"
+                                            class="form-control"
+                                            formControlName="duration"
+                                            min="1"
+                                            step="1"
+                                            placeholder="Enter duration"
+                                            [class.is-invalid]="courseForm.controls.duration.invalid && courseForm.controls.duration.touched">
+
+                                        @if (courseForm.controls.duration.touched &&
+                                        courseForm.controls.duration.hasError('required')) {
+                                        <small class="text-danger">
+                                            Course duration is required.
+                                        </small>
+                                        }
+
+                                        @if (courseForm.controls.duration.touched &&
+                                        (courseForm.controls.duration.hasError('min') ||
+                                        courseForm.controls.duration.hasError('pattern'))) {
+                                        <small class="text-danger">
+                                            Duration must be a whole number greater than 0.
+                                        </small>
+                                        }
+                                    </div>
+
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Duration Unit</label>
+
+                                        <select class="form-select"
+                                            formControlName="durationUnit">
+
+                                            <option value="Days">Days</option>
+                                            <option value="Weeks">Weeks</option>
+                                            <option value="Months">Months</option>
+                                            <option value="Years">Years</option>
+
+                                        </select>
+                                    </div>
+
+                                </div>
+
+                                <!-- Subjects -->
                                 <div class="mb-3">
                                     <label class="form-label">Subjects</label>
 
-                                    <textarea class="form-control" formControlName="subjects" rows="3"
+                                    <textarea class="form-control"
+                                        formControlName="subjects"
+                                        rows="3"
                                         placeholder="Enter subjects separated by commas"
-                                        [class.is-invalid]="courseForm.controls.subjects.invalid && courseForm.controls.subjects.touched">
-    </textarea>
+                                        [class.is-invalid]="courseForm.controls.subjects.invalid && courseForm.controls.subjects.touched"></textarea>
 
                                     @if (courseForm.controls.subjects.touched &&
                                     courseForm.controls.subjects.hasError('required')) {
@@ -285,13 +342,15 @@
                                     }
                                 </div>
 
-
+                                <!-- Form Buttons -->
                                 <button type="submit" class="btn btn-primary">
                                     <i class="fa-solid fa-floppy-disk me-2"></i>
                                     {{ editingCourseId ? 'Update Course' : 'Save Course' }}
                                 </button>
 
-                                <button type="button" class="btn btn-secondary ms-2" (click)="cancelCourseForm()">
+                                <button type="button"
+                                    class="btn btn-secondary ms-2"
+                                    (click)="cancelCourseForm()">
                                     <i class="fa-solid fa-xmark me-1"></i>
                                     Cancel
                                 </button>
@@ -320,6 +379,7 @@
                             <tr>
                                 <th>Course Name</th>
                                 <th>Course Code</th>
+                                <th>Duration</th>
                                 <th>Subjects</th>
                                 <th>Actions</th>
                             </tr>
@@ -341,22 +401,31 @@
                                 </td>
 
                                 <td>
+                                    {{ course.duration }} {{ course.durationUnit }}
+                                </td>
+
+                                <td>
                                     {{ course.subjects.join(', ') }}
                                 </td>
 
                                 <td>
 
-                                    <button type="button" class="action-label view" (click)="viewCourse(course._id)">
+                                    <button type="button"
+                                        class="action-label view"
+                                        (click)="viewCourse(course._id)">
                                         <i class="fa-solid fa-eye me-1"></i>
                                         Details
                                     </button>
 
-                                    <button type="button" class="action-label edit" (click)="updateCourse(course._id)">
+                                    <button type="button"
+                                        class="action-label edit"
+                                        (click)="updateCourse(course._id)">
                                         <i class="fa-solid fa-pen-to-square me-1"></i>
                                         Edit
                                     </button>
 
-                                    <button type="button" class="action-label delete"
+                                    <button type="button"
+                                        class="action-label delete"
                                         (click)="deleteCourse(course._id)">
                                         <i class="fa-solid fa-trash me-1"></i>
                                         Delete
@@ -368,7 +437,7 @@
                             } @empty {
 
                             <tr>
-                                <td colspan="4" class="text-center py-4">
+                                <td colspan="5" class="text-center py-4">
                                     <i class="fa-solid fa-book-open me-2"></i>
                                     No courses found.
                                 </td>
@@ -398,4 +467,3 @@
     </div>
 
 </div>
-```

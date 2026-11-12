@@ -1,15 +1,11 @@
 
-const express = require("express");
-const router = express.Router();
-const authMiddleware = require("../middleware/authMiddleware");
 const Course = require("../models/Course");
 const Students = require("../models/Students");
 const XLSX = require("xlsx");
 
-router.use(authMiddleware);
 
 // To create course
-router.post("/create", async (req, res) => {
+const createCourse = async (req, res) => {
     try {
         const course = await Course.create(req.body);
 
@@ -26,11 +22,11 @@ router.post("/create", async (req, res) => {
             error: error.message
         });
     }
-});
+};
 
 
 // To list the courses
-router.post("/list", async (req, res) => {
+const getCourses = async (req, res) => {
     try {
         const courses = await Course.find();
 
@@ -45,11 +41,11 @@ router.post("/list", async (req, res) => {
             error: error.message
         });
     }
-});
+};
 
 
-// details of course with enrolled students
-router.post("/:courseId/details", async (req, res) => {
+// Details of course with enrolled students
+const getCourseDetails = async (req, res) => {
     try {
         const course = await Course.findById(req.params.courseId);
 
@@ -78,11 +74,11 @@ router.post("/:courseId/details", async (req, res) => {
             error: error.message
         });
     }
-});
+};
 
 
 // To update a course
-router.post("/:courseId/update", async (req, res) => {
+const updateCourse = async (req, res) => {
     try {
         const course = await Course.findById(req.params.courseId);
 
@@ -103,7 +99,13 @@ router.post("/:courseId/update", async (req, res) => {
         if (req.body.subjects !== undefined) {
             course.subjects = req.body.subjects;
         }
+        if (req.body.duration !== undefined) {
+            course.duration = req.body.duration;
+        }
 
+        if (req.body.durationUnit !== undefined) {
+            course.durationUnit = req.body.durationUnit;
+        }
         await course.save();
 
         res.status(200).json({
@@ -117,11 +119,11 @@ router.post("/:courseId/update", async (req, res) => {
             error: error.message
         });
     }
-});
+};
 
 
 // To delete a course
-router.post("/:courseId/delete", async (req, res) => {
+const deleteCourse = async (req, res) => {
     try {
         const course = await Course.findById(req.params.courseId);
 
@@ -131,7 +133,7 @@ router.post("/:courseId/delete", async (req, res) => {
             });
         }
 
-        // To prevent deleting a course that having enrolled students
+        // Prevent deleting a course that has enrolled students
         const enrolledStudents = await Students.exists({
             course: course._id
         });
@@ -154,14 +156,15 @@ router.post("/:courseId/delete", async (req, res) => {
             error: error.message
         });
     }
-});
+};
+
 
 // To add a subject to a course
-router.post("/add-subject", async (req, res) => {
+const addSubject = async (req, res) => {
     try {
         const { courseId, subject } = req.body;
 
-        // To Check course exists
+        // Check whether course exists
         const course = await Course.findById(courseId);
 
         if (!course) {
@@ -170,7 +173,7 @@ router.post("/add-subject", async (req, res) => {
             });
         }
 
-        // To Check subject already exists
+        // Check whether subject already exists
         const subjectExists = course.subjects.some(
             item => item.toLowerCase() === subject.trim().toLowerCase()
         );
@@ -181,7 +184,7 @@ router.post("/add-subject", async (req, res) => {
             });
         }
 
-        // To add subject
+        // Add subject
         course.subjects.addToSet(subject.trim());
 
         await course.save();
@@ -197,11 +200,11 @@ router.post("/add-subject", async (req, res) => {
             error: error.message
         });
     }
-});
+};
 
 
 // To remove a subject from a course
-router.post("/remove-subject", async (req, res) => {
+const removeSubject = async (req, res) => {
     try {
         const { courseId, subject } = req.body;
 
@@ -238,27 +241,35 @@ router.post("/remove-subject", async (req, res) => {
             error: error.message
         });
     }
-});
+};
 
-router.post("/export", async (req, res) => {
+
+// To export courses to Excel
+const exportCourses = async (req, res) => {
     try {
         const courses = await Course.find();
         const students = await Students.find();
+
         const CourseData = courses.map(course => ({
-            'Name': course.name,
-            'Code': course.code,
-            'Subjects': course.subjects.join(', '),
-            'Enrolled Students': students.filter(
+            "Name": course.name,
+            "Code": course.code,
+            "Subjects": course.subjects.join(", "),
+            "Enrolled Students": students.filter(
                 student => student.course.toString() === course._id.toString()
             ).length
         }));
+
         const worksheet = XLSX.utils.json_to_sheet(CourseData);
+
         const workbook = XLSX.utils.book_new();
+
         XLSX.utils.book_append_sheet(workbook, worksheet, "Courses");
+
         const excelBuffer = XLSX.write(workbook, {
             bookType: "xlsx",
             type: "buffer"
         });
+
         res.setHeader(
             "Content-Disposition",
             'attachment; filename="courses.xlsx"'
@@ -270,12 +281,24 @@ router.post("/export", async (req, res) => {
         );
 
         return res.send(excelBuffer);
+
     } catch (error) {
         return res.status(500).json({
             message: "Failed to export file!",
-            error:error.message
-        })
+            error: error.message
+        });
     }
-});
+};
 
-module.exports = router;
+
+// Export controller functions
+module.exports = {
+    createCourse,
+    getCourses,
+    getCourseDetails,
+    updateCourse,
+    deleteCourse,
+    addSubject,
+    removeSubject,
+    exportCourses
+};

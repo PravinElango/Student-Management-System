@@ -27,6 +27,8 @@ interface Course {
   name: string;
   code: string;
   subjects: string[];
+  duration: number;
+  durationUnit: 'Days' | 'Weeks' | 'Months' | 'Years';
   students_enrolled: number;
 }
 
@@ -77,7 +79,13 @@ export class Courses implements OnInit {
     subjects: ['', [
       Validators.required,
       Validators.pattern(/.*\S.*/)
-    ]]
+    ]],
+    duration: [1, [
+      Validators.required,
+      Validators.min(1),
+      Validators.pattern(/^[0-9]+$/)
+    ]],
+    durationUnit: ['Months', [Validators.required]]
   });
 
   showCourseForm = signal(false);
@@ -158,7 +166,9 @@ export class Courses implements OnInit {
       subjects: formValue.subjects!
         .split(',')
         .map(subject => subject.trim())
-        .filter(subject => subject !== '')
+        .filter(subject => subject !== ''),
+      duration: Number(formValue.duration),
+      durationUnit: formValue.durationUnit
     };
 
     console.log("Course payload:", courseData);
@@ -207,7 +217,9 @@ export class Courses implements OnInit {
           this.courseForm.patchValue({
             name: course.name,
             code: course.code,
-            subjects: course.subjects.join(', ')
+            subjects: course.subjects.join(', '),
+            duration: course.duration,
+            durationUnit: course.durationUnit
           });
 
           this.showCourseForm.set(true);
@@ -246,7 +258,9 @@ export class Courses implements OnInit {
       subjects: formValue.subjects!
         .split(',')
         .map(subject => subject.trim())
-        .filter(subject => subject !== '')
+        .filter(subject => subject !== ''),
+      duration: Number(formValue.duration),
+      durationUnit: formValue.durationUnit
     };
 
     this.http.post<CourseActionResponse>(
@@ -301,7 +315,9 @@ export class Courses implements OnInit {
     this.courseForm.reset({
       name: '',
       code: '',
-      subjects: ''
+      subjects: '',
+      duration: 1,
+      durationUnit: 'Months'
     });
 
     this.showCourseForm.set(true);
@@ -318,7 +334,9 @@ export class Courses implements OnInit {
     this.courseForm.reset({
       name: '',
       code: '',
-      subjects: ''
+      subjects: '',
+      duration: 1,
+      durationUnit: 'Months'
     });
   }
 

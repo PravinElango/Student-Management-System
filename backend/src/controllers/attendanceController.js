@@ -1,13 +1,9 @@
 
-const express = require("express");
-const router = express.Router();
-
 const Attendance = require("../models/Attendance");
 const Student = require("../models/Students");
 const Class = require("../models/Class");
 
-const authMiddleware = require("../middleware/authMiddleware");
-
+// Normalize and validate attendance date
 const normalizeDate = (date) => {
     if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
         return null;
@@ -23,8 +19,9 @@ const normalizeDate = (date) => {
     return parsedDate;
 };
 
-//Mark Attendance
-router.post("/mark", authMiddleware, async (req, res) => {
+
+// Mark Attendance
+const markAttendance = async (req, res) => {
     try {
         const { student, class: classId, date, status } = req.body;
 
@@ -44,8 +41,10 @@ router.post("/mark", authMiddleware, async (req, res) => {
             });
         }
 
-        if (!existingStudent.class ||
-            existingStudent.class.toString() !== classId) {
+        if (
+            !existingStudent.class ||
+            existingStudent.class.toString() !== classId
+        ) {
             return res.status(400).json({
                 message: "Student is not assigned to this class!"
             });
@@ -85,11 +84,11 @@ router.post("/mark", authMiddleware, async (req, res) => {
             error: error.message
         });
     }
-});
+};
 
 
-//Fetch Attendance by Class and Date
-router.post("/list", authMiddleware, async (req, res) => {
+// Fetch Attendance by Class and Date
+const getAttendance = async (req, res) => {
     try {
         const { class: classId, date } = req.body;
 
@@ -137,13 +136,15 @@ router.post("/list", authMiddleware, async (req, res) => {
             error: error.message
         });
     }
-});
+};
 
 
-//Fetch Student Attendance History
-router.post("/student/:studentId/history", authMiddleware, async (req, res) => {
+// Fetch Student Attendance History
+const getStudentAttendanceHistory = async (req, res) => {
     try {
-        const existingStudent = await Student.findById(req.params.studentId);
+        const existingStudent = await Student.findById(
+            req.params.studentId
+        );
 
         if (!existingStudent) {
             return res.status(404).json({
@@ -171,11 +172,11 @@ router.post("/student/:studentId/history", authMiddleware, async (req, res) => {
             error: error.message
         });
     }
-});
+};
 
 
-//Update Attendance
-router.post("/:id/update", authMiddleware, async (req, res) => {
+// Update Attendance
+const updateAttendance = async (req, res) => {
     try {
         const { status, date } = req.body;
 
@@ -224,11 +225,11 @@ router.post("/:id/update", authMiddleware, async (req, res) => {
             error: error.message
         });
     }
-});
+};
 
 
 // Delete Attendance
-router.post("/:id/delete", authMiddleware, async (req, res) => {
+const deleteAttendance = async (req, res) => {
     try {
         const existingAttendance = await Attendance.findById(req.params.id);
 
@@ -252,12 +253,11 @@ router.post("/:id/delete", authMiddleware, async (req, res) => {
             error: error.message
         });
     }
-});
-
+};
 
 
 // Fetch Student Attendance Details with Statistics
-router.post("/:studentId/details", authMiddleware, async (req, res) => {
+const getStudentAttendanceDetails = async (req, res) => {
     try {
         const existingStudent = await Student.findById(
             req.params.studentId
@@ -269,7 +269,7 @@ router.post("/:studentId/details", authMiddleware, async (req, res) => {
             });
         }
 
-        // Fetch attendance history
+        // Fetch attendance history and calculate statistics together
         const [attendance, summaryResult] = await Promise.all([
 
             Attendance.find({
@@ -278,7 +278,7 @@ router.post("/:studentId/details", authMiddleware, async (req, res) => {
                 .populate("class", "name code")
                 .sort({ date: -1 }),
 
-            // Calculate attendance statistics using aggregation
+            // Attendance statistics using aggregation
             Attendance.aggregate([
                 {
                     $match: {
@@ -380,7 +380,14 @@ router.post("/:studentId/details", authMiddleware, async (req, res) => {
             error: error.message
         });
     }
-});
+};
 
 
-module.exports = router;
+module.exports = {
+    markAttendance,
+    getAttendance,
+    getStudentAttendanceHistory,
+    updateAttendance,
+    deleteAttendance,
+    getStudentAttendanceDetails
+};

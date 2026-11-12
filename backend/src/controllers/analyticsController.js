@@ -1,14 +1,11 @@
 
-const express = require("express");
-const router = express.Router();
-
 const Students = require("../models/Students");
 const Course = require("../models/Course");
 const Attendance = require("../models/Attendance");
-const authMiddleware = require("../middleware/authMiddleware");
 
-// 1. Student overview analytics
-router.post("/overview", authMiddleware, async (req, res) => {
+
+// 1. Student Overview Analytics
+const getStudentOverview = async (req, res) => {
     try {
         const overview = await Students.aggregate([
             {
@@ -49,11 +46,11 @@ router.post("/overview", authMiddleware, async (req, res) => {
             error: error.message
         });
     }
-});
+};
 
 
-// 2. Course-wise student enrollment analytics
-router.post("/course-enrollment", authMiddleware, async (req, res) => {
+// 2. Course-wise Student Enrollment Analytics
+const getCourseEnrollment = async (req, res) => {
     try {
         const enrollmentAnalytics = await Course.aggregate([
             {
@@ -94,11 +91,11 @@ router.post("/course-enrollment", authMiddleware, async (req, res) => {
             error: error.message
         });
     }
-});
+};
 
 
-// 3. Monthly student admissions analytics
-router.post("/monthly-admissions", authMiddleware, async (req, res) => {
+// 3. Monthly Student Admissions Analytics
+const getMonthlyAdmissions = async (req, res) => {
     try {
         const monthlyAdmissions = await Students.aggregate([
             {
@@ -148,11 +145,11 @@ router.post("/monthly-admissions", authMiddleware, async (req, res) => {
             error: error.message
         });
     }
-});
+};
 
 
-// 4. Top-performing attendance students
-router.post("/top-attendance", authMiddleware, async (req, res) => {
+// 4. Top-performing Attendance Students
+const getTopAttendanceStudents = async (req, res) => {
     try {
         const limit = Number(req.body?.limit ?? 5);
 
@@ -287,7 +284,12 @@ router.post("/top-attendance", authMiddleware, async (req, res) => {
             error: error.message
         });
     }
-});
+};
 
 
-module.exports = router;
+module.exports = {
+    getStudentOverview,
+    getCourseEnrollment,
+    getMonthlyAdmissions,
+    getTopAttendanceStudents
+};
